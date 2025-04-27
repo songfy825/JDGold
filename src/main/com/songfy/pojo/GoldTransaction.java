@@ -19,7 +19,9 @@ public class GoldTransaction {
     private Double soldPrice; // 卖出单价（元/g）
     private Boolean isSold;   // 是否已卖出
     private Double profit;
+    private LocalDateTime createTime;
     private LocalDateTime updateTime; // 更新时间
+
 
     public GoldTransaction(Double totalCost, Double quantity) {
         this.totalCost = totalCost;
@@ -28,7 +30,9 @@ public class GoldTransaction {
         this.soldPrice = 0.0;
         this.isSold = false;
         this.profit = 0.0;
+        this.createTime = LocalDateTime.now();
         this.updateTime = LocalDateTime.now();
+
     }
 
     public GoldTransaction(GoldTransaction copyTransaction) {

@@ -8,8 +8,8 @@ import javax.swing.table.AbstractTableModel;
 import java.util.List;
 
 public class TransactionTableModel extends AbstractTableModel {
-//    private final String[] columnNames = {"ID", "totalCost", "quantity", "buyPrice", "soldPrice", "isSold", "profit", "updateTime"};
-private final String[] columnNames = {"ID", "总消费", "克数", "买入单价", "卖出单价", "是否已卖出", "总盈利", "更新时间"};
+    //    private final String[] columnNames = {"ID", "totalCost", "quantity", "buyPrice", "soldPrice", "isSold", "profit", "updateTime"};
+    private final String[] columnNames = {"ID", "总消费", "克数", "买入单价", "卖出单价", "是否已卖出", "总盈利", "创建时间", "更新时间"};
 
     @Getter
     private List<GoldTransaction> transactions;
@@ -52,6 +52,8 @@ private final String[] columnNames = {"ID", "总消费", "克数", "买入单价
             case 6:
                 return transaction.getProfit();
             case 7:
+                return transaction.getCreateTime();
+            case 8:
                 return transaction.getUpdateTime();
             default:
                 return null;

@@ -8,6 +8,7 @@ import main.com.songfy.service.GoldService;
 import main.com.songfy.service.impl.GoldServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.util.List;
 
 @Slf4j
@@ -75,6 +76,14 @@ public class GoldController {
     }
     public Result sellGold( Double soldQuantity,Double soldPrice){
         goldService.sellGold(soldQuantity,soldPrice);
+        return Result.success();
+    }
+    public Result addTransaction(String transactionFilePath){
+        goldService.addTransaction(transactionFilePath);
+        return  Result.success();
+    }
+    public Result deleteAllTransaction(){
+        goldService.deleteAllTransaction();
         return Result.success();
     }
 }

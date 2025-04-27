@@ -27,6 +27,7 @@ public class GoldMapper {
                         soldPrice DOUBLE NOT NULL,
                         isSold BOOLEAN NOT NULL,
                         profit DOUBLE NOT NULL ,
+                        createTime DATETIME NOT NULL ,
                         updateTime DATETIME NOT NULL
                     );
                 """;
@@ -41,7 +42,7 @@ public class GoldMapper {
     }
 
     public void insertTransaction(GoldTransaction goldTransaction) {
-        String insertSQL = "INSERT INTO Transactions (totalCost, quantity,buyPrice,soldPrice,isSold,profit,updateTime) VALUES (?, ?, ?, ?, ?, ?, ?);";
+        String insertSQL = "INSERT INTO Transactions (totalCost, quantity,buyPrice,soldPrice,isSold,profit,createTime,updateTime) VALUES (?, ?, ?, ?, ?, ?, ?,?);";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
             setPstmt(goldTransaction, pstmt);
@@ -65,8 +66,9 @@ public class GoldMapper {
                 Double soldPrice = rs.getDouble("soldPrice");
                 Boolean isSold = rs.getBoolean("isSold");
                 Double profit = rs.getDouble("profit");
+                LocalDateTime createTime = rs.getTimestamp("createTime").toLocalDateTime();
                 LocalDateTime updateTime = rs.getTimestamp("updateTime").toLocalDateTime();
-                goldTransactions.add(new GoldTransaction(id, totalCost, quantity, buyPrice, soldPrice, isSold, profit, updateTime));
+                goldTransactions.add(new GoldTransaction(id, totalCost, quantity, buyPrice, soldPrice, isSold, profit, createTime, updateTime));
             }
         } catch (SQLException e) {
             log.error("查询所有数据失败");
@@ -75,11 +77,11 @@ public class GoldMapper {
     }
 
     public void updateTransactionById(GoldTransaction goldTransaction, Integer id) {
-        String updateSQL = "UPDATE Transactions SET totalCost = ?, quantity = ?, buyPrice = ?, soldPrice = ?, isSold = ?, profit = ?,updateTime = ? WHERE id = ?;";
+        String updateSQL = "UPDATE Transactions SET totalCost = ?, quantity = ?, buyPrice = ?, soldPrice = ?, isSold = ?, profit = ?,createTime=?,updateTime = ? WHERE id = ?;";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(updateSQL)) {
             setPstmt(goldTransaction, pstmt);
-            pstmt.setInt(8, id);
+            pstmt.setInt(9, id);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error("更新数据失败");
@@ -110,12 +112,10 @@ public class GoldMapper {
             Double soldPrice = rs.getDouble("soldPrice");
             Boolean isSold = rs.getBoolean("isSold");
             Double profit = rs.getDouble("profit");
-            Timestamp timestamp = rs.getTimestamp("updateTime");
-            LocalDateTime updateTime = (timestamp != null) ? timestamp.toLocalDateTime() : null;
-            log.debug("查询数据成功");
-            return new GoldTransaction(id, totalCost, quantity, buyPrice, soldPrice, isSold, profit, updateTime);
+            LocalDateTime updateTime = (rs.getTimestamp("updateTime") != null) ? rs.getTimestamp("updateTime").toLocalDateTime() : null;
+            LocalDateTime createTime = (rs.getTimestamp("createTime") != null) ? rs.getTimestamp("createTime").toLocalDateTime() : null;
+            return new GoldTransaction(id, totalCost, quantity, buyPrice, soldPrice, isSold, profit, createTime, updateTime);
         } catch (SQLException e) {
-            log.error("查询数据失败");
             return null;
         }
 
@@ -169,7 +169,8 @@ public class GoldMapper {
         pstmt.setDouble(4, goldTransaction.getSoldPrice());
         pstmt.setBoolean(5, goldTransaction.getIsSold());
         pstmt.setDouble(6, goldTransaction.getProfit());
-        pstmt.setTimestamp(7, Timestamp.valueOf(goldTransaction.getUpdateTime()));
+        pstmt.setTimestamp(7, Timestamp.valueOf(goldTransaction.getCreateTime()));
+        pstmt.setTimestamp(8, Timestamp.valueOf(goldTransaction.getUpdateTime()));
     }
 
     public List<GoldTransaction> querySortedTransactions(boolean isSold, String columnName, boolean ascending) {
@@ -196,5 +197,17 @@ public class GoldMapper {
             log.error("查询排序失败: {}", e.getMessage());
         }
         return transactions;
+    }
+
+    public void deleteAllTransaction() {
+        // SQL删除所有记录
+        String deleteSQL = "DELETE FROM Transactions;";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(deleteSQL)) {
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            log.error("删除数据失败");
+        }
     }
 }
