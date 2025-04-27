@@ -31,4 +31,6 @@ public interface GoldService {
     void deleteTransactionById(int id);
 
     List<GoldTransaction> sortTransactions(boolean isSold, String columnName, boolean ascending);
+
+    void sellGold(double soldQuantity,double soldPrice);
 }

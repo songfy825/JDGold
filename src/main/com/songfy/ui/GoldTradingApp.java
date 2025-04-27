@@ -11,6 +11,8 @@ import javax.swing.event.RowSorterEvent;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 @Slf4j
@@ -78,29 +80,22 @@ public class GoldTradingApp {
         JPanel soldPanel = new JPanel(new BorderLayout());
         soldTransactionTableModel = new TransactionTableModel(new ArrayList<>());
         soldTransactionTable = new JTable(soldTransactionTableModel);
-        TableRowSorter<TransactionTableModel> soldSorter = new TableRowSorter<>(soldTransactionTableModel);
         JScrollPane soldScrollPane = new JScrollPane(soldTransactionTable);
         soldPanel.add(soldScrollPane, BorderLayout.CENTER);
         tabbedPane.addTab("已卖出金记录", soldPanel);
 
-        // 排序监听
-        remainSorter.addRowSorterListener(e -> {
-            if (e.getType() == RowSorterEvent.Type.SORT_ORDER_CHANGED) {
-                int sortColumnIndex = remainSorter.getSortKeys().get(0).getColumn();
-                String columnName = remainTransactionTableModel.getColumnName(sortColumnIndex);
-                boolean ascending = remainSorter.getSortKeys().get(0).getSortOrder() == SortOrder.ASCENDING;
-                sortTransactions(false, columnName, ascending);
-            }
-        });
+// 添加交易记录按钮和一键卖出按钮
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton addTransactionButton = new JButton("添加交易记录");
+        buttonPanel.add(addTransactionButton);
+        JButton sellTransactionButton = new JButton("一键卖出");
+        buttonPanel.add(sellTransactionButton);
+        unsoldPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        soldSorter.addRowSorterListener(e -> {
-            if (e.getType() == RowSorterEvent.Type.SORT_ORDER_CHANGED) {
-                int sortColumnIndex = soldSorter.getSortKeys().get(0).getColumn();
-                String columnName = soldTransactionTableModel.getColumnName(sortColumnIndex);
-                boolean ascending = soldSorter.getSortKeys().get(0).getSortOrder() == SortOrder.ASCENDING;
-                sortTransactions(true, columnName, ascending);
-            }
-        });
+// 添加交易记录按钮事件
+        addTransactionButton.addActionListener(this::addTransaction);
+// 添加一键卖出按钮事件
+        sellTransactionButton.addActionListener(this::sellCheapGoldTransactions);
         // 添加右键菜单
         JPopupMenu popupSoldMenu = new JPopupMenu();
         JPopupMenu popupRemainSoldMenu = new JPopupMenu();
@@ -108,7 +103,7 @@ public class GoldTradingApp {
         toSoldItem.addActionListener(e -> {
             int selectedIndex = remainTransactionTable.getSelectedRow();
             if (selectedIndex != -1) {
-                markAsSold(selectedIndex);
+                sellGold(selectedIndex);
             }
         });
         JMenuItem cancelSoldItem = new JMenuItem("取消卖出");
@@ -139,14 +134,7 @@ public class GoldTradingApp {
         remainTransactionTable.setComponentPopupMenu(popupRemainSoldMenu);
         soldTransactionTable.setComponentPopupMenu(popupSoldMenu);
 
-        // 添加交易记录按钮
-        JPanel addButtonPanel = new JPanel(new FlowLayout());
-        JButton addTransactionButton = new JButton("添加交易记录");
-        addButtonPanel.add(addTransactionButton);
-        panel.add(addButtonPanel, BorderLayout.SOUTH);
 
-        // 添加交易记录按钮事件
-        addTransactionButton.addActionListener(this::addTransaction);
 
         // 盈利部分
         JPanel profitPanel = new JPanel();
@@ -190,6 +178,34 @@ public class GoldTradingApp {
         frame.setVisible(true);
     }
 
+    private void sellCheapGoldTransactions(ActionEvent actionEvent) {
+        JPanel panel = new JPanel(new GridLayout(2, 2));
+        JLabel perSoldLabel = new JLabel("请输入卖出单价（元/g）：");
+        JTextField perSoldField = new JTextField();
+        JLabel sellQuantityLabel = new JLabel("请输入卖出重量（g）：");
+        JTextField sellQuantityField = new JTextField();
+
+        panel.add(perSoldLabel);
+        panel.add(perSoldField);
+        panel.add(sellQuantityLabel);
+        panel.add(sellQuantityField);
+        int result = JOptionPane.showConfirmDialog(frame, panel, "卖出单笔交易记录", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                double perCost = Double.parseDouble(perSoldField.getText());
+                double sellQuantity = Double.parseDouble(sellQuantityField.getText());
+                if (sellQuantity < 0 || sellQuantity > goldSummary.getTotalQuantity()) {
+                    throw new NumberFormatException("重量输入有误！");
+                }
+                goldController.sellGold(sellQuantity, perCost);
+                updateTransactions();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(frame, "输入无效：" + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+    }
+
 
     private void updateTransactions() {
         Result result = goldController.queryAllTransaction();
@@ -231,6 +247,7 @@ public class GoldTradingApp {
                 currentPriceLabel.setText(String.format("%.2f 元/g", currentGoldPrice));
                 goldController.querySummary(goldSummary, currentGoldPrice);
                 updateSummaryUI(goldSummary);
+                updateTransactions();
             } else {
                 JOptionPane.showMessageDialog(frame, "获取的金价数据类型不正确", "错误", JOptionPane.ERROR_MESSAGE);
             }
@@ -271,21 +288,33 @@ public class GoldTradingApp {
 
 
     // 标记某条记录为已卖出
-    private void markAsSold(Integer index) {
+    private void sellGold(Integer index) {
         GoldTransaction goldTransaction = remainTransactionTableModel.getTransactions().get(index);
-        try {
-            String quantityInput = JOptionPane.showInputDialog(frame, "请输入卖出重量（g）：");
-            double sellQuantity = Double.parseDouble(quantityInput);
-            if (sellQuantity < 0 || sellQuantity > goldTransaction.getQuantity()) {
-                throw new NumberFormatException("重量输入有误！");
+        // 创建一个 JPanel 来容纳两个输入框
+        JPanel panel = new JPanel(new GridLayout(2, 2));
+        JLabel perCostLabel = new JLabel("请输入卖出单价（元/g）：");
+        JTextField perCostField = new JTextField();
+        JLabel sellQuantityLabel = new JLabel("请输入卖出重量（g）：");
+        JTextField sellQuantityField = new JTextField();
+
+        panel.add(perCostLabel);
+        panel.add(perCostField);
+        panel.add(sellQuantityLabel);
+        panel.add(sellQuantityField);
+        int result = JOptionPane.showConfirmDialog(frame, panel, "卖出单笔交易记录", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                double perCost = Double.parseDouble(perCostField.getText());
+                double sellQuantity = Double.parseDouble(sellQuantityField.getText());
+                if (sellQuantity < 0 || sellQuantity > goldTransaction.getQuantity()) {
+                    throw new NumberFormatException("重量输入有误！");
+                }
+                goldController.sellGold(goldTransaction.getId(), sellQuantity, perCost);
+                updateTransactions();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(frame, "输入无效：" + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
             }
-            goldController.sellGold(goldTransaction.getId(), sellQuantity, currentGoldPrice);
-            updateTransactions();
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(frame, "输入无效：" + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
         }
-
-
     }
 
     // 取消卖出某条记录
@@ -318,6 +347,7 @@ public class GoldTradingApp {
     }
 
     private void sortTransactions(boolean isSold, String columnName, boolean ascending) {
+        log.debug("根据{}排序", columnName);
         Result result = goldController.sortTransactions(isSold, columnName, ascending);
         if (result.getCode() == 1) {
             @SuppressWarnings("unchecked")

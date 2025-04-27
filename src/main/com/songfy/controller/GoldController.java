@@ -73,4 +73,8 @@ public class GoldController {
     public Result sortTransactions(boolean isSold, String columnName, boolean ascending) {
         return Result.success(goldService.sortTransactions(isSold, columnName, ascending));
     }
+    public Result sellGold( Double soldQuantity,Double soldPrice){
+        goldService.sellGold(soldQuantity,soldPrice);
+        return Result.success();
+    }
 }

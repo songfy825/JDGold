@@ -37,7 +37,6 @@ public class GoldMapper {
             log.error("创建数据库失败");
             return 0;
         }
-        log.debug("创建数据库成功");
         return 1;
     }
 
@@ -50,7 +49,6 @@ public class GoldMapper {
         } catch (SQLException e) {
             log.error("插入数据失败");
         }
-        log.debug("插入数据成功");
     }
 
     public List<GoldTransaction> queryAllTransaction() {
@@ -73,7 +71,6 @@ public class GoldMapper {
         } catch (SQLException e) {
             log.error("查询所有数据失败");
         }
-        log.debug("查询所有数据成功");
         return goldTransactions;
     }
 
@@ -87,7 +84,6 @@ public class GoldMapper {
         } catch (SQLException e) {
             log.error("更新数据失败");
         }
-        log.debug("更新数据成功");
     }
 
     public void deleteTransactionById(Integer id) {
@@ -100,7 +96,6 @@ public class GoldMapper {
         } catch (SQLException e) {
             log.error("删除数据失败");
         }
-        log.debug("删除数据成功");
     }
 
     public GoldTransaction queryTransactionById(Integer id) {
@@ -132,11 +127,9 @@ public class GoldMapper {
              PreparedStatement pstmt = conn.prepareStatement(selectSQL)) {
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                log.debug("查询总利润成功");
                 return rs.getDouble("totalProfit");
             }
-        } catch (SQLException e) {
-            log.error("查询总利润失败");
+        } catch (SQLException ignored) {
         }
         return -1 * Double.MAX_VALUE;
     }
@@ -147,12 +140,10 @@ public class GoldMapper {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(selectSQL)) {
             if (rs.next()) {
-                log.debug("查询数据成功");
                 return rs.getDouble("averagePrice");
 
             }
-        } catch (SQLException e) {
-            log.error("查询数据失败", e);
+        } catch (SQLException ignored) {
         }
         return -1 * Double.MAX_VALUE;
     }
@@ -163,7 +154,6 @@ public class GoldMapper {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(selectSQL)) {
             if (rs.next()) {
-                log.debug("查询数据成功");
                 return rs.getDouble("totalQuantity");
             }
         } catch (SQLException e) {

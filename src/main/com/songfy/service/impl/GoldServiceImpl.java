@@ -15,6 +15,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -175,6 +176,28 @@ public class GoldServiceImpl implements GoldService {
     @Override
     public List<GoldTransaction> sortTransactions(boolean isSold, String columnName, boolean ascending) {
         return goldMapper.querySortedTransactions(isSold, columnName, ascending);
+
+    }
+
+    @Override
+    public void sellGold(double soldQuantity, double soldPrice) {
+        //把最低价的卖出去，利益最大,还要比较购入时间和卖出时间
+        // TODO:不知道怎么动态解析网页的各种买入和卖出的信息，只能自己手动按照顺序输入买入卖出信息
+        synchronized (this){
+            List<GoldTransaction> goldTransactions = goldMapper.querySortedTransactions(false, "buyPrice", true);
+            double sumQuantity = 0.0;
+            for (GoldTransaction goldTransaction : goldTransactions) {
+//            log.debug(goldTransaction.toString());
+                if (sumQuantity + goldTransaction.getQuantity() < soldQuantity) {
+                    sumQuantity += goldTransaction.getQuantity();
+                    sellGold(goldTransaction.getId(), goldTransaction.getQuantity(), soldPrice);
+                } else {
+                    sellGold(goldTransaction.getId(),soldQuantity - sumQuantity, soldPrice);
+                    break;
+                }
+
+            }
+        }
 
     }
 }
