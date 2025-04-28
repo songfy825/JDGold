@@ -20,6 +20,7 @@ public class GoldMapper {
     private String bankName;
 
     private Connection getConnection() throws SQLException {
+        log.debug(DB_URL);
         return DriverManager.getConnection(DB_URL);
     }
     public GoldMapper(String bankName) {

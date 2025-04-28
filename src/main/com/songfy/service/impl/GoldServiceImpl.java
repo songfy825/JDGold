@@ -9,6 +9,7 @@ import main.com.songfy.service.GoldService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -24,7 +25,7 @@ import static main.com.songfy.misc.TransactionParser.parseTransactionsToJson;
 @Slf4j
 public class GoldServiceImpl implements GoldService {
 
-    private GoldMapper goldMapper = new GoldMapper("MS");
+    private GoldMapper goldMapper ;
     @Override
     public void changeBank(String bankName) {
         String bankNameMap = switch (bankName) {
@@ -272,7 +273,28 @@ public class GoldServiceImpl implements GoldService {
 
     @Override
     public int initializeDatabase() {
+        String userHome = System.getProperty("user.home");
+        File goldDataDir = new File(userHome, "GoldData");
+        if (!goldDataDir.exists()) {
+            boolean created = goldDataDir.mkdirs();
+            if (created) {
+                log.debug("GoldData 目录创建成功");
+            } else {
+                log.debug("GoldData 目录创建失败");
+            }
+        } else {
+            log.debug("GoldData 目录已存在");
+        }
+
+        // 获取 GoldData 目录的相对路径
+        String relativePath = goldDataDir.getPath();
+        log.debug("GoldData 目录的相对路径: " + relativePath);
+        // 拼接jdbc     public static String DB_URL_MS = "jdbc:sqlite:./data/Transaction_MS.db"; //民生银行
+        Config.DB_URL_MS = "jdbc:sqlite:" + relativePath + "/Transaction_MS.db";
+        Config.DB_URL_ZS = "jdbc:sqlite:" + relativePath + "/Transaction_ZS.db";
+        Config.DB_URL_GS = "jdbc:sqlite:" + relativePath + "/Transaction_GS.db";
         try {
+            goldMapper = new GoldMapper("MS");
             goldMapper.initializeDatabase();
         }catch (Exception e){
             log.error("初始化数据库失败");
