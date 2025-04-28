@@ -5,19 +5,50 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import main.com.songfy.misc.Config;
 import main.com.songfy.pojo.GoldTransaction;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Data
+@NoArgsConstructor
 public class GoldMapper {
-    private static final String DB_URL = Config.DB_URL;
+    private String DB_URL;
+    private String bankName;
 
-    private static Connection getConnection() throws SQLException {
+    private Connection getConnection() throws SQLException {
+        log.debug(DB_URL);
         return DriverManager.getConnection(DB_URL);
     }
+    public GoldMapper(String bankName) {
+        this.bankName = bankName;
+        switch (bankName){
+            case "MS":
+                this.DB_URL = Config.DB_URL_MS;
+                break;
+            case "ZS":
+                this.DB_URL = Config.DB_URL_ZS;
+                break;
+            case "GS":
+                this.DB_URL = Config.DB_URL_GS;
+                break;
+        }
+    }
+    public void setBankName(String bankName){
+        this.bankName = bankName;
+        this.DB_URL = switch (bankName) {
+            case "MS" -> Config.DB_URL_MS;
+            case "ZS" -> Config.DB_URL_ZS;
+            case "GS" -> Config.DB_URL_GS;
+            default -> null;
+        };
+    }
 
-    public static int initializeDatabase() {
+
+    public int initializeDatabase() {
         String createTransactionsTableSQL = """
                     CREATE TABLE IF NOT EXISTS Transactions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,7 +58,8 @@ public class GoldMapper {
                         soldPrice DOUBLE NOT NULL,
                         isSold BOOLEAN NOT NULL,
                         profit DOUBLE NOT NULL ,
-                        updateTime DATETIME NOT NULL
+                        createTime DATETIME NOT NULL ,
+                        updateTime DATETIME NOT NULL 
                     );
                 """;
         try (Connection conn = getConnection();
@@ -37,12 +69,11 @@ public class GoldMapper {
             log.error("创建数据库失败");
             return 0;
         }
-        log.debug("创建数据库成功");
         return 1;
     }
 
     public void insertTransaction(GoldTransaction goldTransaction) {
-        String insertSQL = "INSERT INTO Transactions (totalCost, quantity,buyPrice,soldPrice,isSold,profit,updateTime) VALUES (?, ?, ?, ?, ?, ?, ?);";
+        String insertSQL = "INSERT INTO Transactions (totalCost, quantity,buyPrice,soldPrice,isSold,profit,createTime,updateTime) VALUES (?, ?, ?, ?, ?, ?, ?,?);";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
             setPstmt(goldTransaction, pstmt);
@@ -50,7 +81,6 @@ public class GoldMapper {
         } catch (SQLException e) {
             log.error("插入数据失败");
         }
-        log.debug("插入数据成功");
     }
 
     public List<GoldTransaction> queryAllTransaction() {
@@ -67,27 +97,26 @@ public class GoldMapper {
                 Double soldPrice = rs.getDouble("soldPrice");
                 Boolean isSold = rs.getBoolean("isSold");
                 Double profit = rs.getDouble("profit");
+                LocalDateTime createTime = rs.getTimestamp("createTime").toLocalDateTime();
                 LocalDateTime updateTime = rs.getTimestamp("updateTime").toLocalDateTime();
-                goldTransactions.add(new GoldTransaction(id, totalCost, quantity, buyPrice, soldPrice, isSold, profit, updateTime));
+                goldTransactions.add(new GoldTransaction(id, totalCost, quantity, buyPrice, soldPrice, isSold, profit, createTime, updateTime));
             }
         } catch (SQLException e) {
             log.error("查询所有数据失败");
         }
-        log.debug("查询所有数据成功");
         return goldTransactions;
     }
 
     public void updateTransactionById(GoldTransaction goldTransaction, Integer id) {
-        String updateSQL = "UPDATE Transactions SET totalCost = ?, quantity = ?, buyPrice = ?, soldPrice = ?, isSold = ?, profit = ?,updateTime = ? WHERE id = ?;";
+        String updateSQL = "UPDATE Transactions SET totalCost = ?, quantity = ?, buyPrice = ?, soldPrice = ?, isSold = ?, profit = ?,createTime=?,updateTime = ? WHERE id = ?;";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(updateSQL)) {
             setPstmt(goldTransaction, pstmt);
-            pstmt.setInt(8, id);
+            pstmt.setInt(9, id);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error("更新数据失败");
         }
-        log.debug("更新数据成功");
     }
 
     public void deleteTransactionById(Integer id) {
@@ -100,7 +129,6 @@ public class GoldMapper {
         } catch (SQLException e) {
             log.error("删除数据失败");
         }
-        log.debug("删除数据成功");
     }
 
     public GoldTransaction queryTransactionById(Integer id) {
@@ -115,12 +143,10 @@ public class GoldMapper {
             Double soldPrice = rs.getDouble("soldPrice");
             Boolean isSold = rs.getBoolean("isSold");
             Double profit = rs.getDouble("profit");
-            Timestamp timestamp = rs.getTimestamp("updateTime");
-            LocalDateTime updateTime = (timestamp != null) ? timestamp.toLocalDateTime() : null;
-            log.debug("查询数据成功");
-            return new GoldTransaction(id, totalCost, quantity, buyPrice, soldPrice, isSold, profit, updateTime);
+            LocalDateTime updateTime = (rs.getTimestamp("updateTime") != null) ? rs.getTimestamp("updateTime").toLocalDateTime() : null;
+            LocalDateTime createTime = (rs.getTimestamp("createTime") != null) ? rs.getTimestamp("createTime").toLocalDateTime() : null;
+            return new GoldTransaction(id, totalCost, quantity, buyPrice, soldPrice, isSold, profit, createTime, updateTime);
         } catch (SQLException e) {
-            log.error("查询数据失败");
             return null;
         }
 
@@ -132,11 +158,9 @@ public class GoldMapper {
              PreparedStatement pstmt = conn.prepareStatement(selectSQL)) {
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                log.debug("查询总利润成功");
                 return rs.getDouble("totalProfit");
             }
-        } catch (SQLException e) {
-            log.error("查询总利润失败");
+        } catch (SQLException ignored) {
         }
         return -1 * Double.MAX_VALUE;
     }
@@ -147,12 +171,10 @@ public class GoldMapper {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(selectSQL)) {
             if (rs.next()) {
-                log.debug("查询数据成功");
                 return rs.getDouble("averagePrice");
 
             }
-        } catch (SQLException e) {
-            log.error("查询数据失败", e);
+        } catch (SQLException ignored) {
         }
         return -1 * Double.MAX_VALUE;
     }
@@ -163,7 +185,6 @@ public class GoldMapper {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(selectSQL)) {
             if (rs.next()) {
-                log.debug("查询数据成功");
                 return rs.getDouble("totalQuantity");
             }
         } catch (SQLException e) {
@@ -179,7 +200,8 @@ public class GoldMapper {
         pstmt.setDouble(4, goldTransaction.getSoldPrice());
         pstmt.setBoolean(5, goldTransaction.getIsSold());
         pstmt.setDouble(6, goldTransaction.getProfit());
-        pstmt.setTimestamp(7, Timestamp.valueOf(goldTransaction.getUpdateTime()));
+        pstmt.setTimestamp(7, Timestamp.valueOf(goldTransaction.getCreateTime()));
+        pstmt.setTimestamp(8, Timestamp.valueOf(goldTransaction.getUpdateTime()));
     }
 
     public List<GoldTransaction> querySortedTransactions(boolean isSold, String columnName, boolean ascending) {
@@ -207,4 +229,18 @@ public class GoldMapper {
         }
         return transactions;
     }
+
+    public void deleteAllTransaction() {
+        // SQL删除所有记录
+        String deleteSQL = "DELETE FROM Transactions;";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(deleteSQL)) {
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            log.error("删除数据失败");
+        }
+    }
 }
+
+
