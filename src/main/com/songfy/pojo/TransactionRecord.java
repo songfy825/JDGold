@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TransactionRecord {
     String type;
+    String bankName;
     String createTime;
     double quantity;
     double perCost;

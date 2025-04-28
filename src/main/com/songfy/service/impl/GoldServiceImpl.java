@@ -23,7 +23,19 @@ import static main.com.songfy.misc.TransactionParser.parseTransactionsToJson;
 
 @Slf4j
 public class GoldServiceImpl implements GoldService {
-    private final GoldMapper goldMapper = new GoldMapper();
+
+    private GoldMapper goldMapper = new GoldMapper("MS");
+    @Override
+    public void changeBank(String bankName) {
+        String bankNameMap = switch (bankName) {
+            case "民生银行" -> "MS";
+            case "浙商银行" -> "ZS";
+            case "工商银行" -> "GS";
+            default -> "";
+        };
+        goldMapper.setBankName(bankNameMap);
+        goldMapper.initializeDatabase();
+    }
 
     @Override
     public void buyGold(double totalCost, double quantity) {
@@ -59,7 +71,7 @@ public class GoldServiceImpl implements GoldService {
         // 卖出价格更新
         soldGoldTransaction.setSoldPrice(soldPrice);
         soldGoldTransaction.setIsSold(true);
-        soldGoldTransaction.setProfit(soldGoldTransaction.calculateProfit(soldPrice));
+        soldGoldTransaction.setProfit(soldGoldTransaction.calculateProfit(soldPrice, goldMapper.getBankName()));
         goldTransaction.setCreateTime(LocalDateTime.now());
         soldGoldTransaction.setCreateTime(LocalDateTime.now());
         goldTransaction.setUpdateTime(LocalDateTime.now());
@@ -121,7 +133,7 @@ public class GoldServiceImpl implements GoldService {
     public void updateRemainProfit(double currentGoldPrice) {
         List<GoldTransaction> goldTransactions = queryRemainTransaction();
         goldTransactions.forEach(goldTransaction -> {
-            goldTransaction.setProfit(goldTransaction.calculateProfit(currentGoldPrice));
+            goldTransaction.setProfit(goldTransaction.calculateProfit(currentGoldPrice, goldMapper.getBankName()));
 
             goldTransaction.setUpdateTime(LocalDateTime.now());
         });
@@ -134,8 +146,15 @@ public class GoldServiceImpl implements GoldService {
     @Override
     public Double fetchCurrentGoldPrice() throws Exception {
         StringBuilder response = null;
+        String apiUrl = switch (goldMapper.getBankName()) {
+            case "MS" -> Config.API_URL_MS;
+            case "ZS" -> Config.API_URL_ZS;
+            case "GS" -> Config.API_URL_GS;
+            default -> "";
+        };
+        log.debug(apiUrl);
         try {
-            URL url = new URL(Config.API_URL);
+            URL url = new URL(apiUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 
@@ -249,6 +268,17 @@ public class GoldServiceImpl implements GoldService {
     @Override
     public void deleteAllTransaction() {
         goldMapper.deleteAllTransaction();
+    }
+
+    @Override
+    public int initializeDatabase() {
+        try {
+            goldMapper.initializeDatabase();
+        }catch (Exception e){
+            log.error("初始化数据库失败");
+            return 0;
+        }
+        return 1;
     }
 }
 

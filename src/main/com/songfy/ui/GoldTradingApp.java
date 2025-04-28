@@ -2,6 +2,7 @@ package main.com.songfy.ui;
 
 import lombok.extern.slf4j.Slf4j;
 import main.com.songfy.controller.GoldController;
+import main.com.songfy.misc.Config;
 import main.com.songfy.pojo.GoldSummary;
 import main.com.songfy.pojo.GoldTransaction;
 import main.com.songfy.pojo.Result;
@@ -25,7 +26,7 @@ public class GoldTradingApp {
     private TransactionTableModel remainTransactionTableModel;
     private JTable soldTransactionTable;
     private JTable remainTransactionTable;
-
+    private JComboBox<String> bankComboBox;
     private JButton refreshButton;
     private final GoldController goldController;
     private final GoldSummary goldSummary;
@@ -34,6 +35,7 @@ public class GoldTradingApp {
     private JLabel averagePriceLabel;
     private JLabel avgProfitLabel;
     private JLabel totalQuantityLabel;
+    private String selectedBank;
 
     public GoldTradingApp() {
         // 初始化组件
@@ -59,23 +61,36 @@ public class GoldTradingApp {
         pricePanel.add(currentPriceLabel);
         refreshButton = new JButton("刷新金价");
         pricePanel.add(refreshButton);
-        panel.add(pricePanel, BorderLayout.NORTH);
+//        panel.add(pricePanel, BorderLayout.NORTH);
 
         refreshButton.addActionListener(this::refreshGoldPrice);
         Timer timer = new Timer(1000, this::refreshGoldPrice);
         timer.start();
 
+        // 银行选择部分
+        JPanel bankPanel = new JPanel(new FlowLayout());
+//        bankComboBox = new JComboBox<>(new String[]{"民生银行", "浙商银行", "工商银行"});
+        bankComboBox = new JComboBox<>(new String[]{"民生银行", "浙商银行"});
+        bankComboBox.addActionListener(this::bankChanged);
+        bankPanel.add(new JLabel("选择银行："));
+        bankPanel.add(bankComboBox);
+        JPanel bankInfoPanel = new JPanel(new FlowLayout());
+        bankInfoPanel.add(bankPanel);
+        bankInfoPanel.add(pricePanel);
+        panel.add(bankInfoPanel, BorderLayout.NORTH);
+//        panel.add(bankPanel, BorderLayout.NORTH);
+
         // 交易记录部分
         JTabbedPane tabbedPane = new JTabbedPane();
 
         // 未卖出金记录部分
-        JPanel unsoldPanel = new JPanel(new BorderLayout());
+        JPanel remainPanel = new JPanel(new BorderLayout());
         remainTransactionTableModel = new TransactionTableModel(new ArrayList<>());
         remainTransactionTable = new JTable(remainTransactionTableModel);
         TableRowSorter<TransactionTableModel> remainSorter = new TableRowSorter<>(remainTransactionTableModel);
-        JScrollPane unsoldScrollPane = new JScrollPane(remainTransactionTable);
-        unsoldPanel.add(unsoldScrollPane, BorderLayout.CENTER);
-        tabbedPane.addTab("未卖出金记录", unsoldPanel);
+        JScrollPane remainScrollPane = new JScrollPane(remainTransactionTable);
+        remainPanel.add(remainScrollPane, BorderLayout.CENTER);
+        tabbedPane.addTab("未卖出金记录", remainPanel);
 
         // 已卖出金记录部分
         JPanel soldPanel = new JPanel(new BorderLayout());
@@ -91,7 +106,7 @@ public class GoldTradingApp {
         buttonPanel.add(addTransactionButton);
         JButton sellTransactionButton = new JButton("一键卖出");
         buttonPanel.add(sellTransactionButton);
-        unsoldPanel.add(buttonPanel, BorderLayout.SOUTH);
+        remainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         // 添加上传文件按钮
         JButton uploadFileButton = new JButton("上传交易记录");
@@ -164,6 +179,12 @@ public class GoldTradingApp {
         panel.add(tabbedPane, BorderLayout.CENTER);
         frame.getContentPane().add(panel);
         frame.setVisible(true);
+    }
+
+    private void bankChanged(ActionEvent actionEvent) {
+        selectedBank = (String) bankComboBox.getSelectedItem();
+        goldController.changeBank(selectedBank);
+        updateTransactions();
     }
 
     private void uploadFileAction(ActionEvent e) {
@@ -303,12 +324,17 @@ public class GoldTradingApp {
         try {
             // 获取数据并进行类型转换
             Object data = this.goldController.getCurrentGoldPrice().getData();
+
+            if (data == null) {
+                JOptionPane.showMessageDialog(frame, "获取的金价数据为空", "错误", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             if (data instanceof Double) {
                 currentGoldPrice = (Double) data;
                 currentPriceLabel.setText(String.format("%.2f 元/g", currentGoldPrice));
                 goldController.querySummary(goldSummary, currentGoldPrice);
                 updateSummaryUI(goldSummary);
-                updateTransactions();
             } else {
                 JOptionPane.showMessageDialog(frame, "获取的金价数据类型不正确", "错误", JOptionPane.ERROR_MESSAGE);
             }
@@ -316,6 +342,7 @@ public class GoldTradingApp {
             JOptionPane.showMessageDialog(frame, "获取金价失败：" + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 
     // 添加交易记录
     private void addTransaction(ActionEvent e) {
@@ -398,7 +425,5 @@ public class GoldTradingApp {
 //        log.debug("根据{}排序成功", columnName);
 //    }
 
-    public static void main(String[] args) {
-        EventQueue.invokeLater(() -> new GoldTradingApp());
-    }
+
 }

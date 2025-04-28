@@ -5,19 +5,49 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import main.com.songfy.misc.Config;
 import main.com.songfy.pojo.GoldTransaction;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Data
+@NoArgsConstructor
 public class GoldMapper {
-    private static final String DB_URL = Config.DB_URL;
+    private String DB_URL;
+    private String bankName;
 
-    private static Connection getConnection() throws SQLException {
+    private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
+    public GoldMapper(String bankName) {
+        this.bankName = bankName;
+        switch (bankName){
+            case "MS":
+                this.DB_URL = Config.DB_URL_MS;
+                break;
+            case "ZS":
+                this.DB_URL = Config.DB_URL_ZS;
+                break;
+            case "GS":
+                this.DB_URL = Config.DB_URL_GS;
+                break;
+        }
+    }
+    public void setBankName(String bankName){
+        this.bankName = bankName;
+        this.DB_URL = switch (bankName) {
+            case "MS" -> Config.DB_URL_MS;
+            case "ZS" -> Config.DB_URL_ZS;
+            case "GS" -> Config.DB_URL_GS;
+            default -> null;
+        };
+    }
 
-    public static int initializeDatabase() {
+
+    public int initializeDatabase() {
         String createTransactionsTableSQL = """
                     CREATE TABLE IF NOT EXISTS Transactions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +58,7 @@ public class GoldMapper {
                         isSold BOOLEAN NOT NULL,
                         profit DOUBLE NOT NULL ,
                         createTime DATETIME NOT NULL ,
-                        updateTime DATETIME NOT NULL
+                        updateTime DATETIME NOT NULL 
                     );
                 """;
         try (Connection conn = getConnection();
@@ -211,3 +241,5 @@ public class GoldMapper {
         }
     }
 }
+
+

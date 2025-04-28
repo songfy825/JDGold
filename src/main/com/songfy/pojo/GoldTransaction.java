@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import main.com.songfy.misc.Config;
 
 import java.time.LocalDateTime;
 
@@ -46,8 +47,19 @@ public class GoldTransaction {
     }
 
     // 计算每笔交易的盈利
-    public Double calculateProfit(Double currentGoldPrice) {
-        return (currentGoldPrice * (1 - main.com.songfy.misc.Config.SOLD_FEE_RATIO) - buyPrice) * quantity;
+    public Double calculateProfit(Double currentGoldPrice, String bankName) {
+        double soldFeeRation;
+        switch (bankName) {
+            case "zs":
+                soldFeeRation = Config.SOLD_FEE_RATIO_ZS;
+                break;
+            case "gs":
+                soldFeeRation = Config.SOLD_FEE_RATIO_GS;
+                break;
+            default:
+                soldFeeRation = Config.SOLD_FEE_RATIO_MS;
+        }
+        return (currentGoldPrice * (1 - soldFeeRation) - buyPrice) * quantity;
     }
 
 

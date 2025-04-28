@@ -49,7 +49,7 @@ public class GoldController {
     }
 
     public Result initDatabase() {
-        return GoldMapper.initializeDatabase() == 0 ? Result.error("初始化数据库失败") : Result.success();
+        return goldService.initializeDatabase() == 0 ? Result.error("初始化数据库失败") : Result.success();
     }
 
     public Result getCurrentGoldPrice() throws Exception {
@@ -84,6 +84,11 @@ public class GoldController {
     }
     public Result deleteAllTransaction(){
         goldService.deleteAllTransaction();
+        return Result.success();
+    }
+    public Result changeBank(String bankName)
+    {
+        goldService.changeBank(bankName);
         return Result.success();
     }
 }

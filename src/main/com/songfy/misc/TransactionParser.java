@@ -47,8 +47,9 @@ public class TransactionParser {
 
                 // 提取时间
                 Element timeDiv = trans.selectFirst("div.trans-list-tabulate-td-box-col-datetext");
+                Element nameDiv = trans.selectFirst("div.trans-list-tabulate-td-box-col-righttext");
                 String time = timeDiv != null ? timeDiv.text().strip() : "未知";
-
+                String name = nameDiv != null ? nameDiv.text().strip() : "未知";
                 // 检查时间是否包含年份，如果缺少则补全为2025年
                 Pattern yearPattern = Pattern.compile("\\d{4}");
                 if (!yearPattern.matcher(time).find()) {
@@ -75,8 +76,8 @@ public class TransactionParser {
                 double priceValue = price.isEmpty() ? 0 : Double.parseDouble(price);
                 double amountValue = amount.isEmpty() ? 0 : Double.parseDouble(amount);
 
-                TransactionRecord record = new TransactionRecord(transType, time, weightValue, priceValue, amountValue);
-                records.add(0,record);
+                TransactionRecord record = new TransactionRecord(transType, name, time, weightValue, priceValue, amountValue);
+                records.add(0, record);
             }
 
         } catch (IOException e) {

@@ -9,7 +9,10 @@ import java.util.List;
 public interface GoldService {
 
 
+    void changeBank(String bankName);
+
     void buyGold(double totalCost, double quantity);
+
     void buyGold(double totalCost, double quantity, LocalDateTime createTime);
 
     int sellGold(int id, double soldQuantity, double soldPrice);
@@ -26,7 +29,7 @@ public interface GoldService {
 
     void updateRemainProfit(double currentGoldPrice);
 
-    Double fetchCurrentGoldPrice() throws Exception;
+    public Double fetchCurrentGoldPrice() throws Exception;
 
     int restoreTransaction(int id);
 
@@ -34,9 +37,11 @@ public interface GoldService {
 
     List<GoldTransaction> sortTransactions(boolean isSold, String columnName, boolean ascending);
 
-    void sellGold(double soldQuantity,double soldPrice);
+    void sellGold(double soldQuantity, double soldPrice);
 
     void addTransaction(String transactionFilePath);
 
     void deleteAllTransaction();
+
+    int initializeDatabase();
 }
