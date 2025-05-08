@@ -13,8 +13,8 @@
 
 
 1. 1. 下载[🔗仅包含程序](https://github.com/user-attachments/files/19936455/JDGoldAPP.zip)
-   2. [🔗程序jdk21,123云盘链接1](https://www.123912.com/s/bGrRTd-vEpQH?提取码:TjOs) 
-   3. [🔗程序jdk21,123云盘链接1](https://www.123865.com/s/bGrRTd-vEpQH?提取码:TjOs)
+   2. [🔗程序jdk21,123云盘链接1](https://www.123912.com/s/bGrRTd-vEpQH?) 提取码:TjOs
+   3. [🔗程序jdk21,123云盘链接1](https://www.123865.com/s/bGrRTd-vEpQH?)提取码:TjOs
    4. [🔗程序jdk21,百度网盘](https://pan.baidu.com/s/16Zm1rTG-W9Q1s4MBfrjc8Q?pwd=ye4a)
       
 2. 下载[jdk21](https://download.oracle.com/java/21/latest/jdk-21_windows-x64_bin.exe)(目前只测试了这个版本可行，我打包是在jdk17打包的，但是运行不了，所以只能用jdk21)\
@@ -22,7 +22,7 @@
 3. windows win+R 输入cmd，回车。mac ⌘+空格 输入terminal，回车。
 4. 启动命令：java -jar **JDGoldAPP.jar**
 5. 一键启动已经写在release里了，Windows的写了，MAC电脑不在身边，暂未写。
-6. 使用电脑登录京东金融黄金页面 [🔗链接](https://passport.jd.com/new/login.aspx) \
+6. 使用电脑登录京东金融黄金页面 [🔗链接]([https://passport.jd.com/new/login.aspx](https://m.jdjygold.com/finance-gold/newgold/home/?orderSource=hzh_msyhhangqing&utm_source=Android_url_1745221370595&utm_medium=jrappshare&utm_term=wxfriends)) \
       2.1 关于第二步的链接,如果对我提供的链接不放心，你自行打开京东金融黄金页面，右上角三个点分享给微信助手，复制链接在电脑中打开。 \
       2.2 登录后，点击下面的交易明细，就是图标下面那个进入查看你买入卖出的那个界面。\
       2.3 将页面拉到底，一直滚动，直到页面加载完毕。
